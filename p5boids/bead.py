@@ -1,7 +1,9 @@
 from p5 import *
 import numpy as np
 
-class Boid:
+from boid import Boid
+
+class Bead:
 
     def __init__(self, x, y, width, height, max_speed):
         self.position = Vector(x, y)
@@ -31,26 +33,28 @@ class Boid:
         self.acceleration *= 0
 
     def show(self):
-        stroke(0, 0, 255)
-        fill(0, 0, 255)
+        stroke(255, 0, 0)
+        fill(255, 0, 0)
         circle(self.position.x, self.position.y, 10)
 
-    def apply_rules(self, boids, red):
-        # define the acceleration that the rules output
+    def apply_rules(self, boids, blue):
         alignment = self.align(boids)
         cohesion = self.cohesion(boids)
         separation = self.separation(boids)
-        eww = self.eww(boids, red)
+        eww = self.eww(boids, blue)
 
-        # apply the acceleration to the boid's acceleration
         self.acceleration += alignment
         self.acceleration += cohesion
         self.acceleration += separation * 3
         self.acceleration += eww * 20
+        #print('suf')
+
+
+        #doodoo = input('inpooot: ')
+        #cohesion *= int(doodoo)
 
     def edges(self):
-        # if the boid exceeds one of the boundaries the axis' position
-        # it exceeded the boundary on will be set to 0
+
         if self.position.x > self.width:
             self.position.x = 0
         elif self.position.x < 0:
@@ -69,46 +73,41 @@ class Boid:
         sum = Vector(*np.zeros(2))
         for boid in boids:
             if np.linalg.norm(boid.position - self.position) < self.perception:
-                # loop for all the boids to get all the boids within the
-                # boids perception radius
-                sum += boid.velocity # get all boid's velocities within perception radius
-                total += 1 # number of boids within perception
+                sum += boid.velocity
+                total += 1
 
         if total > 0:
             sum /= total
             sum = Vector(*sum)
-            sum = (sum / np.linalg.norm(sum)) * self.max_speed # normalize average velocity
-            steering = sum - self.velocity # steer boid to average velocity
+            sum = (sum / np.linalg.norm(sum)) * self.max_speed
+            steering = sum - self.velocity
 
         return steering
 
     def cohesion(self, boids):
-        # setup
         total = 0
         com = Vector(*np.zeros(2))
         steering = Vector(*np.zeros(2))
         for boid in boids:
             if np.linalg.norm(boid.position - self.position) < self.perception:
-                com += boid.position # add all the positions to later get center of mass
+                com += boid.position
                 total += 1
 
         if total > 1:
-            com /= total # get average aka center of mass
+            com /= total
             com = Vector(*com)
-            com_vec = com - self.position # difference between center of mass and boid's position
+            com_vec = com - self.position
             if np.linalg.norm(com_vec) > 0:
-                com_vec = (com_vec / np.linalg.norm(com_vec)) * self.max_speed # normalize speed
-            steering = com_vec - self.velocity # formula for steering
+                com_vec = (com_vec / np.linalg.norm(com_vec)) * self.max_speed
+            steering = com_vec - self.velocity
 
             steering.limit(self.max_force)
 
         return steering
 
     def separation(self, boids):
-        # setup
         total = 0
         steering = Vector(*np.zeros(2))
-        # diff is reversely proportionate to distance (farther a other boid is less the "main" boid will move away from it)
         for boid in boids:
             distance = np.linalg.norm(self.position - boid.position)
             if distance < 40 and self.position != boid.position:
@@ -124,19 +123,13 @@ class Boid:
             steering -= self.velocity
             steering.limit(self.max_force)
 
-
         return steering
 
-    def eww(self, boids, red):
-        # function to make two groups of boids
-        # setup
+    def eww(self, boids, blue):
         total = 0
         steering = Vector(*np.zeros(2))
 
-        # same as seperation function except larger perception radius
-        # red means red boids
-        # in main.py red/blue for the other group is set to the opposite's group's flock variable
-        for boid in red:
+        for boid in blue:
             distance = np.linalg.norm(self.position - boid.position)
             if distance < 80 and self.position != boid.position:
                 diff = self.position - boid.position
